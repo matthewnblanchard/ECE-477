@@ -1,3 +1,13 @@
+/* Matthew Blanchard & Christian Auspland
+ * ECE 477
+ * 2/9/2017
+ * vtic.c
+ *      Outputs all valid game states of the game 'Tic-Tac-Toe' to standard output, or 
+ *      optionally to a file given as an argument. Assumes 'X' always goes first. A valid
+ *      game is one with a maximum of one winner, in which there is either one more 'X' than 
+ *      'O's, or an equal amount.
+ */
+
 #include <stdio.h>
 
 // Error codes
