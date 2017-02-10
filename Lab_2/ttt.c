@@ -7,46 +7,57 @@ struct wins {
 };
 
 
-int printgame(char *gamelist);
-int win_check(struct wins *res, char brd[]);
+int printgame(char *gamelist);			//prints board on the command line
+int win_check(struct wins *res, char brd[]);	//checks for a winning game
+int error(int input, char *gamelist);		//basic error checking
 
 int main()
 {
-	int piece = 0;
-	char board[] = "123456789";
-	struct wins notlose;
-	int i = 0;
-	while(1){
-		printgame(board);
-		printf("Player one: Choose where you want to place your tile (x)\n");
-		printf("Type in an integer between 1 and 9:");
-		scanf("%d",&piece);
-		board[piece - 1] = 'x';
-		win_check(&notlose, board);
-		if(notlose.x == 1){
+	int piece = 0;				//player specified location
+	char board[] = "123456789";		//starting board to help players 
+	struct wins notlose;			
+	int j = 0;				//keeps track of number of moves for a tie
+	int success = 1;			//error variable
+	while(1)		
+		success = 1;			//reset error
+		while(success){			//while there is an error, ask the player to choose
+			printgame(board);
+			printf("Player one: Choose where you want to place your tile (x)\n");
+			printf("Type in a whole number between 1 and 9:");
+			scanf("%d",&piece);	
+			success = error(piece, board);	//checks for errors, returns 1 if error
+		}
+		board[piece -1] = 'x';		//replaces specified locatino with an 'x' char
+		win_check(&notlose, board);	//checks for win
+		if(notlose.x == 1){		//if x wins, end the game
 			printgame(board);
 			printf("Player 1 Wins!\n");
 			return 0;
 		}
-		if(i == 4)
-			printf("Tie!");
+		if(j == 4){			//if the previous turn was the 9th, end the game
+			printf("Tie!\n");
 			return 0;
-		printgame(board);
-		printf("Player two: Choose where you want to place your tile (o)\n");
-		printf("Type in an integer between 1 and 9:");
-		scanf("%d",&piece);
-		board[piece - 1] = 'o';
+		}
+		success = 1;			//reset error
+		while(success){
+			printgame(board);	
+			printf("Player two: Choose where you want to place your tile (o)\n");
+			printf("Type in a whole number between 1 and 9:");
+			scanf("%d",&piece);
+			success = error(piece, board);
+		}
+		board[piece - 1] = 'o';		//replaces specified location with an 'o' char
 		win_check(&notlose, board);
-		if(notlose.o == 1){
+		if(notlose.o == 1){		//if o wins, end the game
 			printgame(board);
 			printf("Player 2 Wins!\n");
 			return 0;
 		}
-		i++;
+		j++;				//iterate for a tie
 	}
 	return 0;
 }
-
+//printgame simply prints the board along with the current board values
 int printgame( char *gamelist)
 {
 	printf("%c | %c | %c\n",gamelist[0], gamelist[1], gamelist[2]);
@@ -56,7 +67,7 @@ int printgame( char *gamelist)
 	printf("%c | %c | %c\n\n",gamelist[6], gamelist[7], gamelist[8]);
 	return 0;
 }
-
+//checks for win conditions
 int win_check(struct wins *res, char brd[]) {
 
         // Possible wins (r1, r2, r3, c1, c2, c3, diag l->r, diag r->l)
@@ -95,4 +106,20 @@ int win_check(struct wins *res, char brd[]) {
         }
 
         return 0;
+}
+//error checks that the input is within the correct region
+//and that the specified location hasn't already been chosen.
+int error(int input, char *gamelist) {
+	if(input < 1 || input > 9){	//if outside of 1-9, alert the player
+		printf("INVALID INPUT\n");
+		return 1;
+	}
+	//if the specified location already has an x or o, then alert the player
+	else if((gamelist[input - 1] == 'x') || (gamelist[input - 1] == 'o')) {
+		printf("Space already taken, pick another space\n");
+		return 1;
+	}
+	else{	
+		return 0;
+	}
 }
