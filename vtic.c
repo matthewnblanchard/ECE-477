@@ -1,12 +1,15 @@
-
 #include <stdio.h>
 
 // Error codes
 #define ERR_ARGC 1 << 0
 #define ERR_FILE 1 << 1
+#define ERR_BOUNDS 1 << 2
+#define ERR_TRI 1 << 3
+#define ERR_CNT 1 << 4
+#define ERR_WIN 1 << 5
 
 // Constants
-#define TRI_MAX = 3*3*3*3*3*3*3*3*3
+#define TRI_LIM 3*3*3*3*3*3*3*3*3
 
 // Structs
 struct wins {
@@ -19,11 +22,11 @@ struct endgame {
 	int spaces;
 };
 
-int win_check(struct wins *res, char brd[]);
-int convert(int game, char *gamelist);
-int turns(char *gamelist, struct endgame *egame);
+int win_check(struct wins *res, char brd[]);      // Checks for winning combos and saves winners to res
+int convert(unsigned int game, char *gamelist);   // Converts trinary # to array of x's o's and spaces
+int turns(char *gamelist, struct endgame *egame); // Compares # of x's o's and spaces
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) {
 
         FILE *out = stdout;     // Output stream. Default to stdout
         unsigned int tri = 0;   // Numeric board state (interpreted in trinary)
@@ -43,55 +46,55 @@ int main(int argc, char *argv[])
         
         // Attempt to open file if argument present
         if (argc == 2) {
-                out = fopen(argv[1], "w+");
+                out = fopen(argv[1], "w");
                 if (out == NULL) {
                         printf("Error: could not open file: %s\n", argv[1]);
                         return ERR_FILE;
                 }
         }
 
-        for (tri = 0; tri < TRI_MAX; tri++) {
+        for (tri = 0; tri < TRI_LIM; tri++) {
 
                 // Process trinary # to board state array
                 if (convert(tri, board)) {
                         printf("Error: bad trinary conversion\n");
-                        return 1 << 2;
+                        return ERR_TRI;
                 }
 
                 // Count # of x's and o'x, and determine precense of spaces
-                if (turns(board, end)) {
+                if (turns(board, &end)) {
                         printf("Error: failed to count # of x's and o's\n");
-                        return 1 << 3;
+                        return ERR_CNT;
                 }
 
                 // Check for winners
                 if (win_check(&wn, board)) {
                         printf("Error: failed to determine winner\n");
-                        return;
+                        return ERR_WIN;
                 }
-                
+
                 // Determine validity
-                if (end.diff > 1 || end.diff < 0) {
+                if (end.dif > 1 || end.dif < 0) {       // Invalid: improper ratio of x's to o's
                         valid = 0;
-                } else if (wn.x == 1 && wn.o == 1) {
+                } else if (wn.x == 1 && wn.o == 1) {     // Invalid: two winners
                         valid = 0;
-                } else if (wn.x == 1 && end.diff == 1) {
+                } else if (wn.x == 1 && end.dif == 1) {  // Valid: X wins
                         valid = 1;
                         state = 2;
                         sstate = "X wins";
-                } else if (wn.o == 1 && end.diff == 0) {
+                } else if (wn.o == 1 && end.dif == 0) {  // Valid: O wins
                         valid = 1;
                         state = 3;
                         sstate = "O wins";
-                } else if (wn.o == 0 && wn.x == 0 && end.space == 0) {
+                } else if (wn.o == 0 && wn.x == 0 && end.spaces == 0) {    // Valid: stalemate
                         valid = 1;
                         state = 4;
                         sstate = "No winner";
-                } else if (wn.o == 0 && wn.x == 0 && (end.space != 0)) {
+                } else if (wn.o == 0 && wn.x == 0 && (end.spaces != 0)) {  // Valid: game incomplete
                         valid = 1;
                         state = 1;
                         sstate = "Game in Progress";
-                } else {
+                } else {                                 // Everything else is invalid
                        valid = 0;
                 }
 
@@ -103,16 +106,23 @@ int main(int argc, char *argv[])
                         fprintf(out, "%d,", state);
                         fprintf(out, "\"%s\"\n", sstate);
                 } 
-        }  
+        }
+        
+        // Close file if open
+        if (out != stdout)
+              fclose(out);
+
         return 0;
 };
 
 int win_check(struct wins *res, char brd[]) {
         
+        int i = 0;      // Counter
+
         // Possible wins (r1, r2, r3, c1, c2, c3, diag l->r, diag r->l)
         char sets[8] = {'_', '_', '_', // Each character is either 'x', 'o',
                         '_', '_', '_', // or '_', corresponding to which won
-                        '_', '_'};     // that set of 4 ('_' for no match).
+                        '_', '_'};     // that set of 3 ('_' for no match).
 
         // Reset results
         res->x = 0;
@@ -136,7 +146,7 @@ int win_check(struct wins *res, char brd[]) {
         if (brd[2] == brd[4] && brd[2] == brd[6])
                 sets[7] = brd[2];
 
-        int i = 0;
+        // Determine winners
         for (i = 0; i < 8; i++) {
                 if (sets[i] == 'x')
                         res->x = 1;
@@ -147,49 +157,49 @@ int win_check(struct wins *res, char brd[]) {
         return 0;
 };
 
-int convert(int game, char *gamelist){
+int convert(unsigned int game, char *gamelist) {
 
-	if( game > 19684)		//tests if game number is within the maximum (3^9)
-		return 1;		//returns 1 if game number is too large
+	if (game >= TRI_LIM)		// Tests if game number is within the maximum (3^9)
+		return ERR_BOUNDS;	// Return with error if game number is too large
 
-	char i;				//counter
-	char k;
-	int digit;			//temporary value that has the current digit
-	int dfactor;			
-	int pos = 8;
-	for( i = 0; i < 9; i++){	//calculates the value of each digit
-		digit = 0;
-		dfactor = 1;
-		for( k = 0; k < i; k++){
-			dfactor = dfactor * 3;
-		}
-		digit = game / dfactor;//eliminate vdalues below 
-		digit = digit % 3;		//eliminate values above specified digit
-		gamelist[pos] = digit;	//store
-		pos--;
-	}
+	int  i = 0;			// Counter
+	int dfactor = 1;                // Division factor for trinary #			
+	for( i = 0; i < 9; i++) {  	// Calculates the value of each digit
+		gamelist[i] = (game / dfactor) % 3;
+                dfactor *= 3;
+                switch (gamelist[i]) {   // Convert to appropriate character
+                case 0: 
+                        gamelist[i] = ' ';
+                        break;
+                case 1:
+                        gamelist[i] = 'x';
+                        break;
+                case 2:
+                        gamelist[i] = 'o';
+                        break;
+                }
+        }        
 	return 0;	
-}			
+};			
 
-int turns(char *gamelist, struct endgame *egame){
+int turns(char *gamelist, struct endgame *egame) {
 
-	int x = 0;				//number of x's
-	int o = 0;				//number of o's
-	int i;				//counter
-	int space = 0;
-	int diff;			//difference between number of x's and o's
-	for( i = 0; i < 9; i++){
-		if( gamelist[i] == 1) 
+	int x = 0;			// Number of x's
+	int o = 0;			// Number of o's
+	int i = 0;			// Counter
+	int space = 0;                  // # of empty spaces
+	int diff = 0;			// Difference between number of x's and o's
+	for (i = 0; i < 9; i++) {
+		if (gamelist[i] == 'x') 
 			x += 1;
-		else if(gamelist[i] == 2)
+		else if(gamelist[i] == 'o')
 			o += 1;
-		else if(gamelist[i] == 0)
+		else if(gamelist[i] == ' ')
 			space += 1;
 			
 	}
 	diff = x - o;
 	egame->dif = diff;
 	egame->spaces = space;
-	printf("difference: %d spaces: %d\n",egame->dif, egame->spaces);
 	return 0;	
-}
+};
