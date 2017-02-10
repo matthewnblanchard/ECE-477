@@ -1,5 +1,16 @@
-#include <stdio.h>
+/* Matthew Blanchard & Christian Auspland
+ * ECE 477
+ * 2/10/2017
+ * ttt.c
+ * Description: Play tic-tac-toe against a simple AI. The player gets 'X' and always goes firts.
+ *      The AI follows the following priority scheme:
+ *      1.) Win          (Complete line of 3
+ *      2.) Prevent Loss (Block player line of 2)
+ *      3.) Line-up      (Play in line with one 'o' and no 'x')
+ *      4.) Default      (Play in an empty line)
+ */
 
+#include <stdio.h>
 
 // Error Codes
 #define ERR_NOPLAY 1 << 0
@@ -11,58 +22,53 @@ struct wins {
 };
 
 
-int printgame(char *gamelist);			//prints board on the command line
-int win_check(struct wins *res, char brd[]);	//checks for a winning game
-int error(int input, char *gamelist);		//basic error checking
-int comp_pick(char *brd);
+int printgame(char *gamelist);			// Prints board on the command line
+int win_check(struct wins *res, char brd[]);	// Checks for a winning game
+int error(int input, char *gamelist);		// Basic error checking
+int comp_pick(char *brd);                       // Play computer's turn
 
-int main()
-{
-	int piece = 0;				//player specified location
-	char board[] = "123456789";		//starting board to help players 
+int main() {
+	int piece = 0;				// Player specified location
+	char board[] = "123456789";		// Starting board to help players 
 	struct wins notlose;			
-	int j = 0;				//keeps track of number of moves for a tie
-	int success = 1;			//error variable
-	while(1)		
-		success = 1;			//reset error
-		while(success){			//while there is an error, ask the player to choose
+	int j = 0;				// Keeps track of number of moves for a tie
+	int success = 1;			// Error variable
+	while(1) {		
+		success = 1;			// Reset error
+		while(success){			// While there is an error, ask the player to choose
 			printgame(board);
-			printf("Player one: Choose where you want to place your tile (x)\n");
+			printf("Choose where you want to place your tile (x)\n");
 			printf("Type in a whole number between 1 and 9:");
 			scanf("%d",&piece);	
-			success = error(piece, board);	//checks for errors, returns 1 if error
+			success = error(piece, board);	// Checks for errors, returns 1 if error
 		}
-		board[piece -1] = 'x';		//replaces specified locatino with an 'x' char
-		win_check(&notlose, board);	//checks for win
-		if(notlose.x == 1){		//if x wins, end the game
+		board[piece - 1] = 'x';		// Replaces specified locatino with an 'x' char
+		win_check(&notlose, board);	// Checks for win
+		if(notlose.x == 1){		// If x wins, end the game
 			printgame(board);
-			printf("Player 1 Wins!\n");
+			printf("You win!\n");
 			return 0;
 		}
-		if(j == 4){			//if the previous turn was the 9th, end the game
+		if(j == 4){			// If the previous turn was the 9th, end the game
 			printf("Tie!\n");
 			return 0;
 		}
-		success = 1;			//reset error
-		while(success){
-			printgame(board);	
-			printf("Player two: Choose where you want to place your tile (o)\n");
-			printf("Type in a whole number between 1 and 9:");
-			scanf("%d",&piece);
-			success = error(piece, board);
-		}
-		board[piece - 1] = 'o';		//replaces specified location with an 'o' char
+
+		if (comp_pick(board)) {		// Comp chooses
+                        printf("Error: computer failed to pick\n");
+                        return 1;
+                }
 		win_check(&notlose, board);
-		if(notlose.o == 1){		//if o wins, end the game
+		if(notlose.o == 1){		// If o wins, end the game
 			printgame(board);
-			printf("Player 2 Wins!\n");
+			printf("You lose\n");
 			return 0;
 		}
-		j++;				//iterate for a tie
+		j++;				// Iterate for a tie
 	}
 	return 0;
 }
-//printgame simply prints the board along with the current board values
+// Printgame simply prints the board along with the current board values
 int printgame( char *gamelist)
 {
 	printf("%c | %c | %c\n",gamelist[0], gamelist[1], gamelist[2]);
@@ -72,7 +78,7 @@ int printgame( char *gamelist)
 	printf("%c | %c | %c\n\n",gamelist[6], gamelist[7], gamelist[8]);
 	return 0;
 }
-//checks for win conditions
+// Checks for win conditions
 int win_check(struct wins *res, char brd[]) {
 
         // Possible wins (r1, r2, r3, c1, c2, c3, diag l->r, diag r->l)
@@ -112,8 +118,9 @@ int win_check(struct wins *res, char brd[]) {
 
         return 0;
 }
-//error checks that the input is within the correct region
-//and that the specified location hasn't already been chosen.
+
+// Error checks that the input is within the correct region
+// and that the specified location hasn't already been chosen.
 int error(int input, char *gamelist) {
 	if(input < 1 || input > 9){	//if outside of 1-9, alert the player
 		printf("INVALID INPUT\n");
@@ -127,6 +134,7 @@ int error(int input, char *gamelist) {
 	else{	
 		return 0;
 	}
+}
 
 int comp_pick(char *brd) {
         
@@ -182,9 +190,9 @@ int comp_pick(char *brd) {
 
         // 1st Priority: Win the game (fill out final index of 'o' dominant win conditions)
         for (i = 0; i < 8; i++) {
-                if (win[i][4] == 'o' && win[i][5] == 2){
+                if (win[i][3] == 'o' && win[i][4] == 2){
                         for (j = 0; j < 3; j++) {
-                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                if (win[i][j] != 'x' && win[i][j] != 'o') {
                                         brd[win_i[i][j]] = 'o';
                                         return 0;
                                 }
@@ -194,9 +202,9 @@ int comp_pick(char *brd) {
 
         // 2nd Priority: Block an opposing win condition about to be completed (2 x's)
         for (i = 0; i < 8; i++) {
-                if (win[i][4] == 'x' && win[i][5] == 2){
+                if (win[i][3] == 'x' && win[i][4] == 2){
                         for (j = 0; j < 3; j++) {
-                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                if (win[i][j] != 'x' && win[i][j] != 'o') {
                                         brd[win_i[i][j]] = 'o';
                                         return 0;
                                 }
@@ -204,11 +212,23 @@ int comp_pick(char *brd) {
                 }
         }
 
-        // 3rd Priority: Pick first empty win condition
+        // 3rd Priority: Pick partially filled win condition
         for (i = 0; i < 8; i++) {
-                if (win[i][4] == 0){
+                if (win[i][3] == 'o' && win[i][4] == 1){
                         for (j = 0; j < 3; j++) {
-                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                if (win[i][j] != 'x' && win[i][j] != 'o') {
+                                        brd[win_i[i][j]] = 'o';
+                                        return 0;
+                                }
+                        }
+                }
+        }
+
+        // 4th Priority: Pick first empty win condition
+        for (i = 0; i < 8; i++) {
+                if (win[i][3] == 0){
+                        for (j = 0; j < 3; j++) {
+                                if (win[i][j] != 'x' && win[i][j] != 'o') {
                                         brd[win_i[i][j]] = 'o';
                                         return 0;
                                 }
