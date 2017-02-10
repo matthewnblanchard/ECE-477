@@ -1,6 +1,10 @@
 #include <stdio.h>
 
 
+// Error Codes
+#define ERR_NOPLAY 1 << 0
+
+// Structs
 struct wins {
         char x;         // '1' if x won, '0' otherwise
         char o;         // '1' if o won, '0' otherwise
@@ -10,6 +14,7 @@ struct wins {
 int printgame(char *gamelist);			//prints board on the command line
 int win_check(struct wins *res, char brd[]);	//checks for a winning game
 int error(int input, char *gamelist);		//basic error checking
+int comp_pick(char *brd);
 
 int main()
 {
@@ -122,4 +127,94 @@ int error(int input, char *gamelist) {
 	else{	
 		return 0;
 	}
+
+int comp_pick(char *brd) {
+        
+        int i = 0;      // Counter
+        int j = 0;      // Counter
+        int x_cnt = 0;  // # of x's in win condition
+        int o_cnt = 0;  // # of o's in win condition
+
+        // Possible win combos 
+        char win[8][5] = {
+        {brd[0], brd[1], brd[2], 0, 0},       // Row 1
+        {brd[3], brd[4], brd[5], 0, 0},       // Row 2
+        {brd[6], brd[7], brd[8], 0, 0},       // Row 3
+        {brd[0], brd[3], brd[6], 0, 0},       // Col 1
+        {brd[1], brd[4], brd[7], 0, 0},       // Col 2
+        {brd[2], brd[5], brd[8], 0, 0},       // Col 3
+        {brd[0], brd[4], brd[8], 0, 0},       // L->R Diagonal
+        {brd[2], brd[4], brd[6], 0, 0}};      // R->L Diagonal
+        /* ^ Piece in place ^    ^  ^  */
+        /*         Dominant piece|  |  */           
+        /*              # Dom pieces|  */
+
+        // Win combo indices
+        int win_i[8][3] = {
+        {0, 1, 2},
+        {3, 4, 5},
+        {6, 7, 8},
+        {0, 3, 6},
+        {1, 4, 7},
+        {2, 5, 8},
+        {0, 4, 8},
+        {2, 4, 6}};
+
+        // Fill out remainder of win table
+        for (i = 0; i < 8; i++) {
+                x_cnt = 0;     // Reset counts
+                o_cnt = 0;
+                for (j = 0; j < 3; j++) {
+                        if (win[i][j] == 'x') {
+                                x_cnt++;
+                        } else if (win[i][j] == 'o') {
+                                o_cnt++;   
+                        }                     
+                }
+                if (x_cnt != 0 && o_cnt == 0) {          // X dominant
+                        win[i][3] = 'x';
+                        win[i][4] = x_cnt;       
+                } else if (x_cnt == 0 && o_cnt != 0) {   // O dominant
+                        win[i][3] = 'o';
+                        win[i][4] = o_cnt;
+                }
+        }
+
+        // 1st Priority: Win the game (fill out final index of 'o' dominant win conditions)
+        for (i = 0; i < 8; i++) {
+                if (win[i][4] == 'o' && win[i][5] == 2){
+                        for (j = 0; j < 3; j++) {
+                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                        brd[win_i[i][j]] = 'o';
+                                        return 0;
+                                }
+                        }
+                }
+        }
+
+        // 2nd Priority: Block an opposing win condition about to be completed (2 x's)
+        for (i = 0; i < 8; i++) {
+                if (win[i][4] == 'x' && win[i][5] == 2){
+                        for (j = 0; j < 3; j++) {
+                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                        brd[win_i[i][j]] = 'o';
+                                        return 0;
+                                }
+                        }
+                }
+        }
+
+        // 3rd Priority: Pick first empty win condition
+        for (i = 0; i < 8; i++) {
+                if (win[i][4] == 0){
+                        for (j = 0; j < 3; j++) {
+                                if (win[i][j] != 'x' || win[i][j] != 'o') {
+                                        brd[win_i[i][j]] = 'o';
+                                        return 0;
+                                }
+                        }
+                }
+        }
+
+        return ERR_NOPLAY;
 }
