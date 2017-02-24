@@ -1,0 +1,75 @@
+// Matthew Blanchard
+// ECE 477
+// Lecture 1
+// 2/23/2017
+
+Bruce would like any excuse to check off anything on the rubric
+
+Lab Reports:
+
+Start
+ |
+ V
+Initialize
+ |
+ V
+Generate Output Files
+ |
+ V
+Done --> ...
+|
+V
+.
+.
+.
+
+Watch out for ioshell not working
+        It's supposed to be runnign as root, getting permission to run io
+        ports, change user to you, run program
+        
+        Man pages suggest permissions should persist across an exec
+
+Lab 4:
+        Using ATMEGA
+        Using Port B
+        Reading from switches, controlling LEDS. No external pull-ups.
+        Port B, Pin B
+
+        Port ... 8 bit register
+        Any output pins take out the value you write to the port
+        If you read from the port register, you'll read last value
+        written to the port register. 
+
+        Writing to port affects outputs,
+        Reading from port only sees what was last written
+        Reading from pin register shows actual voltages on pins (currently)
+
+        Direction: 1 is output, 0 is input
+        DDRB = 8 bits, corresponding to 8 pins of Port B
+
+
+R = resistor
+Internal pull up:    +5V
+                   | R
+ /-----------------|--
+ =                 |
+
+               |
+/-----R--------|
+_              |
+V 2V
+|
+=
+
+-OR-
+
++5V
+ |
+ |
+ R
+ |             |
+ \_____LED_____|
+               |
+               |
+
+avr-objcopy -R .eeprom -O ihex a.out lab4a.hex
